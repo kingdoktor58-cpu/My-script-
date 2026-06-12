@@ -1,0 +1,97 @@
+-- [[ Osama Custom Hub - Simple Auto Harvest Only ]] --
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local HarvestButton = Instance.new("TextButton")
+local Corner = Instance.new("UICorner")
+
+ScreenGui.Name = "OsamaSimpleHarvestGui"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- تصميم الواجهة البنفسجية الصغيرة لزرار واحد
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 35) 
+MainFrame.Position = UDim2.new(0.05, 0, 0.4, 0) 
+MainFrame.Size = UDim2.new(0, 240, 0, 80) -- حجم أصغر ومناسب لزرار واحد
+MainFrame.Active = true
+MainFrame.Draggable = true 
+
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 12)
+FrameCorner.Parent = MainFrame
+
+-- تصميم زرار الحصاد
+HarvestButton.Name = "HarvestButton"
+HarvestButton.Parent = MainFrame
+HarvestButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226) 
+HarvestButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+HarvestButton.Size = UDim2.new(0, 220, 0, 50)
+HarvestButton.Font = Enum.Font.SourceSansBold
+HarvestButton.Text = "حصاد من أي مكان (Harvest): OFF"
+HarvestButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+HarvestButton.TextSize = 12
+
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = HarvestButton
+
+local harvesting = false
+
+HarvestButton.MouseButton1Click:Connect(function()
+    harvesting = not harvesting
+    if harvesting then
+        HarvestButton.Text = "جاري الحصاد عن بُعد... ON"
+        HarvestButton.BackgroundColor3 = Color3.fromRGB(50, 205, 50) -- يقلب أخضر
+        
+        spawn(function()
+            while harvesting do
+                local player = game.Players.LocalPlayer
+                local character = player.Character or player.CharacterAdded:Wait()
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                
+                if rootPart then
+                    -- حفظ مكانك الأصلي
+                    local originalPosition = rootPart.CFrame
+                    
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if harvesting == false then break end
+                        
+                        -- فحص وجود كلمة Harvest في الزرار أو التفاعل
+                        local isHarvest = string.find(string.lower(v.Name), "harvest") 
+                                          or (v:IsA("ProximityPrompt") and string.find(string.lower(v.ObjectText), "harvest"))
+                                          or (v:IsA("ProximityPrompt") and string.find(string.lower(v.ActionText), "harvest"))
+                        
+                        if isHarvest then
+                            local targetPart = v.Parent
+                            if targetPart and targetPart:IsA("BasePart") then
+                                -- انتقال سريع جداً فوق المحصول للحصاد
+                                rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 2, 0)
+                                task.wait(0.05)
+                                
+                                if v:IsA("ProximityPrompt") then
+                                    v.RequiresLineOfSight = false
+                                    v.MaxActivationDistance = 999999
+                                    fireproximityprompt(v)
+                                elseif v:IsA("ClickDetector") then
+                                    fireclickdetector(v)
+                                elseif v:IsA("TouchTransmitter") then
+                                    firetouchinterest(rootPart, targetPart, 0)
+                                    task.wait()
+                                    firetouchinterest(rootPart, targetPart, 1)
+                                end
+                                task.wait(0.05)
+                            end
+                        end
+                    end
+                    -- ارجاع الشخصية لمكانها الأصلي البعيد
+                    rootPart.CFrame = originalPosition
+                end
+                task.wait(1) -- تكرار العملية كل ثانية للمحاصيل الجديدة
+            end
+        end)
+    else
+        HarvestButton.Text = "حصاد من أي مكان (Harvest): OFF"
+        HarvestButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- يرجع بنفسجي
+    end
+end)
