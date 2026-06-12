@@ -1,3 +1,135 @@
+-- [[ Osama Overpowered Optimized Auto Steal ]] --
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local ActionButton = Instance.new("TextButton")
+local Corner = Instance.new("UICorner")
+
+ScreenGui.Name = "OsamaOptimizedNinja"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- تصميم الواجهة البنفسجية الفخمة
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 15, 35) 
+MainFrame.Position = UDim2.new(0.05, 0, 0.4, 0) 
+MainFrame.Size = UDim2.new(0, 240, 0, 80)
+MainFrame.Active = true
+MainFrame.Draggable = true 
+
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 12)
+FrameCorner.Parent = MainFrame
+
+-- تصميم الزر الذكي
+ActionButton.Name = "ActionButton"
+ActionButton.Parent = MainFrame
+ActionButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226) 
+ActionButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+ActionButton.Size = UDim2.new(0, 220, 0, 50)
+ActionButton.Font = Enum.Font.SourceSansBold
+ActionButton.Text = "1. Save your home's safe location 🏠"
+ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActionButton.TextSize = 13
+
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = ActionButton
+
+-- ترتيب المحاصيل حسب الأفضلية والأغلى
+local PriorityCrops = {
+    "dragon", "mango", "coconut", "grape", "banana", "pineapple",
+    "cactus", "corn", "bamboo", "apple", "tomato", "tulip", "blue",
+    "straw", "carrot", "cherry", "acorn", "mush", "fruit", "harvest"
+}
+
+local homeCFrame = nil
+local autoStealing = false
+local step = 1
+
+-- دالة سريعة جداً للبحث بدون تجميد اللعبة
+local function findBestPrompt(myPosition)
+    local allPrompts = {}
+    
+    -- لقط سريع لكل أزرار التفاعل المتاحة حالياً في الماب لتوفير الجهد
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            table.insert(allPrompts, v)
+        end
+    end
+    
+    -- الفرز بناءً على قائمة الأفضلية والمسافة
+    for _, cropName in ipairs(PriorityCrops) do
+        for _, prompt in ipairs(allPrompts) do
+            local parentName = prompt.Parent and string.lower(prompt.Parent.Name) or ""
+            local promptText = string.lower(prompt.ObjectText .. prompt.ActionText .. prompt.Name)
+            
+            if string.find(promptText, "harvest") or string.find(parentName, "harvest") then
+                if string.find(promptText, cropName) or string.find(parentName, cropName) then
+                    local targetPart = prompt.Parent
+                    if targetPart and targetPart:IsA("BasePart") then
+                        -- التأكد أنها بعيدة عن بيتك (يعني عند الجيران)
+                        if (targetPart.Position - myPosition).Magnitude > 50 then
+                            return prompt, targetPart
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+ActionButton.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not rootPart then return end
+    
+    if step == 1 then
+        homeCFrame = rootPart.CFrame
+        ActionButton.Text = "Activate automatic light theft 🚀 Automatic light 🚀"
+        ActionButton.BackgroundColor3 = Color3.fromRGB(30, 144, 255)
+        step = 2
+        
+    elseif step == 2 then
+        autoStealing = not autoStealing
+        if autoStealing then
+            ActionButton.Text = "Rapid harvest underway... ON"
+            ActionButton.BackgroundColor3 = Color3.fromRGB(50, 205, 50)
+            
+            spawn(function()
+                while autoStealing do
+                    if not homeCFrame then break end
+                    
+                    local prompt, targetPart = findBestPrompt(homeCFrame.Position)
+                    
+                    if prompt and targetPart then
+                        -- انتقال خاطف بالملي
+                        rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 2, 0)
+                        task.wait(0.04) 
+                        
+                        -- شفط فوري
+                        prompt.RequiresLineOfSight = false
+                        prompt.MaxActivationDistance = 999
+                        fireproximityprompt(prompt)
+                        
+                        -- هروب فوري
+                        task.wait(0.02)
+                        rootPart.CFrame = homeCFrame
+                        task.wait(0.8) -- وقت راحة مناسب جداً لمنع تعليق اللعبة أو طردك
+                    else
+                        task.wait(1.5) -- لو الماب فاضية يهدأ تماماً عشان ما يسبب لاج
+                    end
+                end
+            end)
+        else
+            ActionButton.Text = "Activate automatic light theft 🚀"
+            ActionButton.BackgroundColor3 = Color3.fromRGB(30, 144, 255)
+        end
+    end
+end)
 -- [[ Osama Custom Hub - Simple Auto Harvest Only ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -29,7 +161,7 @@ HarvestButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 HarvestButton.Position = UDim2.new(0.05, 0, 0.2, 0)
 HarvestButton.Size = UDim2.new(0, 220, 0, 50)
 HarvestButton.Font = Enum.Font.SourceSansBold
-HarvestButton.Text = "حصاد من أي مكان (Harvest): OFF"
+HarvestButton.Text = "Harvest from anywhere (Harvest): OFF"
 HarvestButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 HarvestButton.TextSize = 12
 
@@ -41,7 +173,7 @@ local harvesting = false
 HarvestButton.MouseButton1Click:Connect(function()
     harvesting = not harvesting
     if harvesting then
-        HarvestButton.Text = "جاري الحصاد عن بُعد... ON"
+        HarvestButton.Text = "Harvesting is underway remotely... ON"
         HarvestButton.BackgroundColor3 = Color3.fromRGB(50, 205, 50) -- يقلب أخضر
         
         spawn(function()
@@ -91,7 +223,7 @@ HarvestButton.MouseButton1Click:Connect(function()
             end
         end)
     else
-        HarvestButton.Text = "حصاد من أي مكان (Harvest): OFF"
+        HarvestButton.Text = "Harvest from anywhere (Harvest): OFF"
         HarvestButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- يرجع بنفسجي
     end
 end)
