@@ -5,9 +5,14 @@ local TextLabelAr = Instance.new("TextLabel")
 local TextLabelEn = Instance.new("TextLabel")
 local UICorner = Instance.new("UICorner")
 
--- ضبط الشاشة بحيث تظهر فوق كل شيء
+-- التأكد من حذف أي واجهة قديمة بنفس الاسم لتفادي التكرار
+local CoreGui = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+if CoreGui:FindFirstChild("NotWorkingGui") then
+    CoreGui.NotWorkingGui:Destroy()
+end
+
 ScreenGui.Name = "NotWorkingGui"
-ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- إنشاء النافذة (الفريم)
@@ -16,7 +21,7 @@ Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.Position = UDim2.new(0.5, -175, 0.5, -75)
 Frame.Size = UDim2.new(0, 350, 0, 150)
 Frame.Active = true
-Frame.Draggable = true -- يمكنك تحريك النافذة بالسحب
+Frame.Draggable = true
 
 -- إضافة حواف دائرية للنافذة
 UICorner.CornerRadius = UDim.new(0, 12)
@@ -30,7 +35,7 @@ TextLabelAr.Size = UDim2.new(0, 330, 0, 40)
 TextLabelAr.Font = Enum.Font.SourceSansBold
 TextLabelAr.Text = "سكربت غير شغال الان"
 TextLabelAr.TextColor3 = Color3.fromRGB(255, 60, 60)
-TextLabelAr.TextSize = 28.000
+TextLabelAr.TextSize = 28
 TextLabelAr.TextScaled = true
 
 -- النص الإنجليزي
@@ -41,5 +46,5 @@ TextLabelEn.Size = UDim2.new(0, 330, 0, 40)
 TextLabelEn.Font = Enum.Font.SourceSansBold
 TextLabelEn.Text = "The script is not working now."
 TextLabelEn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextLabelEn.TextSize = 22.000
+TextLabelEn.TextSize = 22
 TextLabelEn.TextScaled = true
